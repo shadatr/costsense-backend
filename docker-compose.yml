@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: costsense-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-costsense}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-costsense_password}
+      POSTGRES_DB: ${POSTGRES_DB:-costsense_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-costsense}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: costsense-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-8000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-costsense}:${POSTGRES_PASSWORD:-costsense_password}@postgres:5432/${POSTGRES_DB:-costsense_db}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:19006}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-15m}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-7d}
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - ./logs:/app/logs
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
+volumes:
+  postgres_data:
+    driver: local

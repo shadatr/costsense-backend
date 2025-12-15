@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  password      String?   // Optional for Google OAuth users
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  budgets       Budget[]
+  expenses      Expense[]
+  bankAccounts  BankAccount[]
+  categories    Category[]
+  preferences   UserPreferences?
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+
+model UserPreferences {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  currency              String   @default("TRY")
+  language              String   @default("tr")
+  notificationsEnabled  Boolean  @default(true)
+  emailNotifications    Boolean  @default(true)
+  pushNotifications     Boolean  @default(true)
+  budgetAlerts          Boolean  @default(true)
+  theme                 String   @default("light")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  icon        String?
+  color       String?
+  userId      String
+  isDefault   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+  categoryBudgets CategoryBudget[]
+
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+model Expense {
+  id                String   @id @default(cuid())
+  amount            Float
+  description       String?
+  date              DateTime @default(now())
+  categoryId        String
+  userId            String
+  bankAccountId     String?
+  isRecurring       Boolean  @default(false)
+  recurrencePattern String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category     @relation(fields: [categoryId], references: [id])
+  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id])
+
+  @@index([userId, date])
+  @@index([categoryId])
+  @@map("expenses")
+}
+
+
+model Budget {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  totalAmount     Float
+  period          String   @default("monthly")
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryBudgets CategoryBudget[]
+
+  @@index([userId, isActive])
+  @@index([userId, startDate, endDate])
+  @@map("budgets")
+}
+
+model CategoryBudget {
+  id          String   @id @default(cuid())
+  budgetId    String
+  categoryId  String
+  amount      Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([budgetId, categoryId])
+  @@map("category_budgets")
+}
+
+
+model BankAccount {
+  id              String    @id @default(cuid())
+  userId          String
+  bankName        String
+  accountNumber   String
+  accountType     String    @default("checking")
+  balance         Float     @default(0)
+  currency        String    @default("TRY")
+  isActive        Boolean   @default(true)
+  lastSyncedAt    DateTime?
+  apiProvider     String?
+  accessToken     String?   @db.Text
+  refreshToken    String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@index([userId, isActive])
+  @@map("bank_accounts")
+}
+
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}

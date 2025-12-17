@@ -26,6 +26,8 @@ model User {
   categories    Category[]
   preferences   UserPreferences?
   notifications Notification[]
+  userDeals     UserDeal[]
+  userTips      UserTip[]
 
   @@map("users")
 }
@@ -202,4 +204,102 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+// Inflation Tracking Models
+model InflationRate {
+  id            String   @id @default(cuid())
+  date          DateTime @unique
+  rate          Float
+  predictedRate Float?
+  trend         String   @default("stable") // "up", "down", "stable"
+  source        String   @default("TUIK")
+  categoryRates Json?    // Category-specific inflation rates
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([date])
+  @@map("inflation_rates")
+}
+
+// Local Deals Models
+model Deal {
+  id          String    @id @default(cuid())
+  product     String
+  store       String
+  oldPrice    Float
+  newPrice    Float
+  discount    Float
+  location    Json      // { lat: number, lng: number, address: string }
+  validUntil  DateTime
+  imageUrl    String?
+  category    String?   // "groceries", "electronics", etc.
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  userDeals   UserDeal[]
+
+  @@index([store, isActive])
+  @@index([validUntil])
+  @@map("deals")
+}
+
+model UserDeal {
+  id        String   @id @default(cuid())
+  userId    String
+  dealId    String
+  used      Boolean  @default(false)
+  savedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dealId])
+  @@index([userId, used])
+  @@map("user_deals")
+}
+
+// Savings Tips Models
+model SavingsTip {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  icon        String
+  priority    Priority
+  category    String   // "CRYPTO", "RETAIL", "BANKING", "TRANSPORT"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userTips    UserTip[]
+
+  @@index([priority, isActive])
+  @@index([category, isActive])
+  @@map("savings_tips")
+}
+
+model UserTip {
+  id        String   @id @default(cuid())
+  userId    String
+  tipId     String
+  viewed    Boolean  @default(false)
+  helpful   Boolean?
+  dismissed Boolean  @default(false)
+  viewedAt  DateTime @default(now())
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tip  SavingsTip @relation(fields: [tipId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tipId])
+  @@index([userId, viewed])
+  @@map("user_tips")
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
 }

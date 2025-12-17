@@ -75,6 +75,18 @@ export class BudgetController {
       next(error)
     }
   }
+
+  async getSummary(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.userId
+      if (!userId) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ status: 'error', message: 'Unauthorized' })
+
+      const summary = await budgetService.getBudgetSummary(userId)
+      res.status(HTTP_STATUS.OK).json({ status: 'success', data: summary })
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
 export const budgetController = new BudgetController()

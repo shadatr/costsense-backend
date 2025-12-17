@@ -9,7 +9,9 @@ router.use(authenticate)
 
 router.post('/', validate(createBankAccountSchema), bankAccountController.create.bind(bankAccountController))
 router.get('/', bankAccountController.findAll.bind(bankAccountController))
+router.get('/summary', bankAccountController.getSummary.bind(bankAccountController))
 router.get('/:id', bankAccountController.findById.bind(bankAccountController))
+router.post('/:id/sync', bankAccountController.sync.bind(bankAccountController))
 router.patch('/:id', validate(updateBankAccountSchema), bankAccountController.update.bind(bankAccountController))
 router.delete('/:id', bankAccountController.delete.bind(bankAccountController))
 

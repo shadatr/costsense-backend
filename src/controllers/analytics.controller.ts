@@ -64,6 +64,21 @@ export class AnalyticsController {
       next(error)
     }
   }
+
+  async getAnalyticsSummary(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.userId
+      if (!userId) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ status: 'error', message: 'Unauthorized' })
+
+      // Default to current month if not provided
+      const month = (req.query.month as string) || new Date().toISOString().slice(0, 7)
+
+      const summary = await analyticsService.getAnalyticsSummary(userId, month)
+      res.status(HTTP_STATUS.OK).json({ status: 'success', data: summary })
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
 export const analyticsController = new AnalyticsController()

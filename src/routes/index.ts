@@ -6,6 +6,9 @@ import categoryRoutes from './category.routes'
 import budgetRoutes from './budget.routes'
 import bankAccountRoutes from './bankAccount.routes'
 import analyticsRoutes from './analytics.routes'
+import inflationRoutes from './inflation.routes'
+import dealsRoutes from './deals.routes'
+import tipsRoutes from './tips.routes'
 
 const router = Router()
 
@@ -19,6 +22,9 @@ router.use('/categories', categoryRoutes)
 router.use('/budgets', budgetRoutes)
 router.use('/bank-accounts', bankAccountRoutes)
 router.use('/analytics', analyticsRoutes)
+router.use('/inflation', inflationRoutes)
+router.use('/deals', dealsRoutes)
+router.use('/tips', tipsRoutes)
 
 // Health check endpoint
 router.get('/health', (req, res) => {

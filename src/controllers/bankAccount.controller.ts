@@ -63,6 +63,30 @@ export class BankAccountController {
       next(error)
     }
   }
+
+  async getSummary(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.userId
+      if (!userId) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ status: 'error', message: 'Unauthorized' })
+
+      const summary = await bankAccountService.getSummary(userId)
+      res.status(HTTP_STATUS.OK).json({ status: 'success', data: summary })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async sync(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.userId
+      if (!userId) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ status: 'error', message: 'Unauthorized' })
+
+      const result = await bankAccountService.sync(req.params.id, userId)
+      res.status(HTTP_STATUS.OK).json({ status: 'success', message: result.message, data: { lastSyncedAt: result.lastSyncedAt } })
+    } catch (error) {
+      next(error)
+    }
+  }
 }
 
 export const bankAccountController = new BankAccountController()

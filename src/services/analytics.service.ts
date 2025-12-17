@@ -195,6 +195,150 @@ export class AnalyticsService {
 
     return alerts
   }
+
+  /**
+   * Get comprehensive analytics summary for a given month
+   * Used for Expenses analytics tab
+   */
+  async getAnalyticsSummary(userId: string, month: string) {
+    // Parse month (format: YYYY-MM)
+    const [year, monthNum] = month.split('-').map(Number)
+    const startDate = new Date(year, monthNum - 1, 1)
+    const endDate = new Date(year, monthNum, 0, 23, 59, 59)
+
+    // Get all expenses for the month
+    const expenses = await prisma.expense.findMany({
+      where: {
+        userId,
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        category: true,
+      },
+      orderBy: { date: 'asc' },
+    })
+
+    const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0)
+
+    // 1. Spending by Category (Pie/Donut Chart)
+    const categoryMap = new Map<string, { category: string; amount: number; percentage: number }>()
+    expenses.forEach((exp) => {
+      const categoryName = exp.category?.name || 'Uncategorized'
+      const current = categoryMap.get(categoryName) || { category: categoryName, amount: 0, percentage: 0 }
+      categoryMap.set(categoryName, {
+        category: categoryName,
+        amount: current.amount + exp.amount,
+        percentage: 0, // will calculate later
+      })
+    })
+
+    const spendingByCategory = Array.from(categoryMap.values())
+      .map((item) => ({
+        ...item,
+        percentage: totalSpent > 0 ? Math.round((item.amount / totalSpent) * 100) : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+
+    // 2. Daily Spending (Bar Chart)
+    const daysInMonth = endDate.getDate()
+    const dailySpending: Array<{ date: string; amount: number }> = []
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const dayExpenses = expenses.filter((exp) => {
+        const expDate = new Date(exp.date)
+        return expDate.getDate() === day
+      })
+      const dayTotal = dayExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+      dailySpending.push({ date: dateStr, amount: Math.round(dayTotal * 100) / 100 })
+    }
+
+    // 3. Category Comparison (Budget vs Spent)
+    const activeBudget = await prisma.budget.findFirst({
+      where: {
+        userId,
+        isActive: true,
+        startDate: { lte: endDate },
+        endDate: { gte: startDate },
+      },
+      include: {
+        categoryBudgets: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    })
+
+    let categoryComparison: Array<{
+      category: string
+      budget: number
+      spent: number
+      percentage: number
+      status: 'on_track' | 'warning' | 'over'
+    }> = []
+
+    if (activeBudget) {
+      const categorySpentMap = new Map<string, number>()
+      expenses.forEach((exp) => {
+        const catId = exp.categoryId
+        categorySpentMap.set(catId, (categorySpentMap.get(catId) || 0) + exp.amount)
+      })
+
+      categoryComparison = activeBudget.categoryBudgets.map((cb) => {
+        const spent = categorySpentMap.get(cb.categoryId) || 0
+        const percentage = cb.amount > 0 ? (spent / cb.amount) * 100 : 0
+        let status: 'on_track' | 'warning' | 'over' = 'on_track'
+        if (percentage >= 100) status = 'over'
+        else if (percentage >= 80) status = 'warning'
+
+        return {
+          category: cb.category.name,
+          budget: cb.amount,
+          spent: Math.round(spent * 100) / 100,
+          percentage: Math.round(percentage * 10) / 10,
+          status,
+        }
+      })
+    }
+
+    // 4. Stats
+    const dailyAmounts = dailySpending.map((d) => d.amount).filter((a) => a > 0)
+    const busiestDayData = dailySpending.reduce((max, day) => (day.amount > max.amount ? day : max), dailySpending[0])
+
+    const merchantMap = new Map<string, number>()
+    expenses.forEach((exp) => {
+      const merchant = exp.description || 'Unknown'
+      merchantMap.set(merchant, (merchantMap.get(merchant) || 0) + 1)
+    })
+    const mostFrequentMerchantEntry = Array.from(merchantMap.entries()).sort((a, b) => b[1] - a[1])[0]
+
+    const stats = {
+      busiestDay: {
+        date: busiestDayData?.date || '',
+        amount: Math.round((busiestDayData?.amount || 0) * 100) / 100,
+      },
+      topCategory: {
+        name: spendingByCategory[0]?.category || 'None',
+        amount: Math.round((spendingByCategory[0]?.amount || 0) * 100) / 100,
+      },
+      mostFrequentMerchant: {
+        name: mostFrequentMerchantEntry?.[0] || 'None',
+        count: mostFrequentMerchantEntry?.[1] || 0,
+      },
+      averageTransaction: expenses.length > 0 ? Math.round((totalSpent / expenses.length) * 100) / 100 : 0,
+    }
+
+    return {
+      spendingByCategory,
+      dailySpending,
+      categoryComparison,
+      stats,
+    }
+  }
 }
 
 export const analyticsService = new AnalyticsService()

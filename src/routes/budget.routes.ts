@@ -9,6 +9,7 @@ router.use(authenticate)
 
 router.post('/', validate(createBudgetSchema), budgetController.create.bind(budgetController))
 router.get('/', budgetController.findAll.bind(budgetController))
+router.get('/summary', budgetController.getSummary.bind(budgetController))
 router.get('/:id', budgetController.findById.bind(budgetController))
 router.get('/:id/status', budgetController.getStatus.bind(budgetController))
 router.patch('/:id', validate(updateBudgetSchema), budgetController.update.bind(budgetController))

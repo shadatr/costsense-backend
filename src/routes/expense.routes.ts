@@ -24,6 +24,13 @@ router.post('/', validate(createExpenseSchema), expenseController.create.bind(ex
 router.get('/', expenseController.findAll.bind(expenseController))
 
 /**
+ * @route   GET /api/v1/expenses/monthly-summary
+ * @desc    Get monthly expense summary
+ * @access  Private
+ */
+router.get('/monthly-summary', expenseController.getMonthlySummary.bind(expenseController))
+
+/**
  * @route   GET /api/v1/expenses/:id
  * @desc    Get expense by ID
  * @access  Private

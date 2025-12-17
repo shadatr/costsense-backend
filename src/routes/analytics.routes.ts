@@ -6,6 +6,7 @@ const router = Router()
 router.use(authenticate)
 
 router.get('/summary', analyticsController.getDashboardSummary.bind(analyticsController))
+router.get('/analytics-summary', analyticsController.getAnalyticsSummary.bind(analyticsController))
 router.get('/spending-by-category', analyticsController.getSpendingByCategory.bind(analyticsController))
 router.get('/monthly-trends', analyticsController.getMonthlyTrends.bind(analyticsController))
 router.get('/budget-alerts', analyticsController.getBudgetAlerts.bind(analyticsController))

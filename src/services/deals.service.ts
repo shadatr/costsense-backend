@@ -56,7 +56,7 @@ export class DealsService {
         oldPrice: deal.oldPrice,
         newPrice: deal.newPrice,
         discount: deal.discount,
-        location: deal.location as Location,
+        location: deal.location as unknown as Location,
         validUntil: deal.validUntil,
         imageUrl: deal.imageUrl || undefined,
         category: deal.category || undefined,
@@ -84,7 +84,7 @@ export class DealsService {
       // Calculate distance and filter
       const dealsWithDistance = allDeals
         .map((deal) => {
-          const dealLocation = deal.location as Location
+          const dealLocation = deal.location as unknown as Location
           const distance = this.calculateDistance(
             location.lat,
             location.lng,
@@ -151,7 +151,7 @@ export class DealsService {
         oldPrice: deal.oldPrice,
         newPrice: deal.newPrice,
         discount: deal.discount,
-        location: deal.location as Location,
+        location: deal.location as unknown as Location,
         validUntil: deal.validUntil,
         imageUrl: deal.imageUrl || undefined,
         category: deal.category || undefined,
@@ -222,7 +222,7 @@ export class DealsService {
           oldPrice: ud.deal.oldPrice,
           newPrice: ud.deal.newPrice,
           discount: ud.deal.discount,
-          location: ud.deal.location as Location,
+          location: ud.deal.location as unknown as Location,
           validUntil: ud.deal.validUntil,
           imageUrl: ud.deal.imageUrl || undefined,
           category: ud.deal.category || undefined,

@@ -95,7 +95,7 @@ export class TipsService {
       })
 
       const userTipMap = new Map(
-        userTips.map((ut) => [ut.tipId, { viewed: ut.viewed, helpful: ut.helpful }])
+        userTips.map((ut) => [ut.tipId, { viewed: ut.viewed, helpful: ut.helpful, dismissed: ut.dismissed }])
       )
 
       // Filter out dismissed tips and add user interaction data

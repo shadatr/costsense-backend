@@ -34,7 +34,7 @@ export const inflationUpdateJob = cron.schedule(
 
         // Predict next month's rate
         const predictions = await inflationService.predictNextMonths(1)
-        const predictedRate = predictions.length > 0 ? predictions[0] : null
+        const predictedRate = predictions.length > 0 ? predictions[0] : undefined
 
         // Store in database
         await inflationService.storeInflationData({
@@ -71,7 +71,6 @@ export const inflationUpdateJob = cron.schedule(
     }
   },
   {
-    scheduled: false, // Don't start automatically, will be started in server.ts
     timezone: 'Europe/Istanbul', // Turkey timezone (UTC+3)
   }
 )
@@ -98,7 +97,7 @@ export async function runInflationUpdateNow(): Promise<void> {
       await inflationService.storeInflationData({
         date: new Date(),
         rate: inflationData.currentRate,
-        predictedRate,
+        predictedRate: predictedRate || undefined,
         trend: inflationData.trend,
         source: 'TÜİK',
         categoryRates: inflationData.categoryRates,

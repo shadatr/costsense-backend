@@ -9,6 +9,7 @@ import analyticsRoutes from './analytics.routes'
 import inflationRoutes from './inflation.routes'
 import dealsRoutes from './deals.routes'
 import tipsRoutes from './tips.routes'
+import forecastRouter from "./forecast";
 
 const router = Router()
 
@@ -25,7 +26,7 @@ router.use('/analytics', analyticsRoutes)
 router.use('/inflation', inflationRoutes)
 router.use('/deals', dealsRoutes)
 router.use('/tips', tipsRoutes)
-
+router.use('/forecast', forecastRouter)
 // Health check endpoint
 router.get('/health', (req, res) => {
   res.status(200).json({

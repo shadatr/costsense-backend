@@ -57,7 +57,6 @@ export const dealsUpdateJob = cron.schedule(
     }
   },
   {
-    scheduled: false, // Don't start automatically, will be started in server.ts
     timezone: 'Europe/Istanbul', // Turkey timezone (UTC+3)
   }
 )
@@ -131,7 +130,6 @@ export const dealsCleanupJob = cron.schedule(
     }
   },
   {
-    scheduled: false,
     timezone: 'Europe/Istanbul',
   }
 )

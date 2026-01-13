@@ -44,7 +44,7 @@ if (process.env.NODE_ENV === 'development') {
   app.use(
     morgan('combined', {
       stream: {
-        write: (message) => logger.info(message.trim()),
+        write: (message: string) => logger.info(message.trim()),
       },
     })
   )

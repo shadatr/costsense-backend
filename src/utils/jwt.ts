@@ -8,7 +8,7 @@ export interface JwtPayload {
 }
 
 export const generateAccessToken = (userId: string, email: string): string => {
-  return jwt.sign(
+  return (jwt.sign as any)(
     { userId, email, type: 'access' } as JwtPayload,
     env.JWT_SECRET,
     { expiresIn: env.JWT_EXPIRES_IN }
@@ -16,7 +16,7 @@ export const generateAccessToken = (userId: string, email: string): string => {
 }
 
 export const generateRefreshToken = (userId: string, email: string): string => {
-  return jwt.sign(
+  return (jwt.sign as any)(
     { userId, email, type: 'refresh' } as JwtPayload,
     env.JWT_REFRESH_SECRET,
     { expiresIn: env.JWT_REFRESH_EXPIRES_IN }
